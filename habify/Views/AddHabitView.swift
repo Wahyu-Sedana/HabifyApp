@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AddHabitView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var databaseManager: DatabaseManager
     
     @State private var title: String = ""
@@ -34,9 +35,13 @@ struct AddHabitView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Background gradient
+                // Adaptive background gradient
                 LinearGradient(
-                    colors: [
+                    colors: colorScheme == .dark ? [
+                        Color(red: 0.05, green: 0.05, blue: 0.1),
+                        Color(red: 0.08, green: 0.08, blue: 0.12),
+                        Color(red: 0.06, green: 0.06, blue: 0.11)
+                    ] : [
                         Color.white,
                         Color(red: 0.98, green: 0.98, blue: 1.0),
                         Color(red: 0.96, green: 0.97, blue: 0.99)
@@ -53,7 +58,19 @@ struct AddHabitView: View {
                             
                             Text("Create New Habit")
                                 .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: colorScheme == .dark ? [
+                                            Color.white,
+                                            Color(red: 0.9, green: 0.95, blue: 1.0)
+                                        ] : [
+                                            Color.primary,
+                                            Color.primary
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                         }
                         .padding(.top, 20)
                         
@@ -61,7 +78,7 @@ struct AddHabitView: View {
                         VStack(spacing: 20) {
                             HStack {
                                 Image(systemName: "info.circle.fill")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(colorScheme == .dark ? .cyan : .blue)
                                 Text("Basic Information")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.primary)
@@ -80,13 +97,16 @@ struct AddHabitView: View {
                                     .padding(.vertical, 14)
                                     .background(
                                         RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.white)
+                                            .fill(colorScheme == .dark ?
+                                                  Color(red: 0.15, green: 0.15, blue: 0.2) :
+                                                  Color.white
+                                            )
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 12)
                                                     .stroke(
                                                         title.isEmpty && showValidationError ?
                                                             Color.red.opacity(0.5) :
-                                                            Color.gray.opacity(0.2),
+                                                            Color.gray.opacity(colorScheme == .dark ? 0.4 : 0.2),
                                                         lineWidth: 1
                                                     )
                                             )
@@ -106,10 +126,13 @@ struct AddHabitView: View {
                                     .padding(.vertical, 14)
                                     .background(
                                         RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.white)
+                                            .fill(colorScheme == .dark ?
+                                                  Color(red: 0.15, green: 0.15, blue: 0.2) :
+                                                  Color.white
+                                            )
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                                    .stroke(Color.gray.opacity(colorScheme == .dark ? 0.4 : 0.2), lineWidth: 1)
                                             )
                                     )
                             }
@@ -117,15 +140,37 @@ struct AddHabitView: View {
                         .padding(20)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 2)
+                                .fill(
+                                    colorScheme == .dark ?
+                                        LinearGradient(
+                                            colors: [
+                                                Color(red: 0.12, green: 0.12, blue: 0.18),
+                                                Color(red: 0.15, green: 0.15, blue: 0.2)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ) :
+                                        LinearGradient(
+                                            colors: [Color.white, Color.white],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                )
+                                .shadow(
+                                    color: colorScheme == .dark ?
+                                        Color.black.opacity(0.3) :
+                                        Color.black.opacity(0.05),
+                                    radius: colorScheme == .dark ? 15 : 10,
+                                    x: 0,
+                                    y: 2
+                                )
                         )
                         
                         // Duration & Frequency Card
                         VStack(spacing: 20) {
                             HStack {
                                 Image(systemName: "calendar.badge.clock")
-                                    .foregroundColor(.green)
+                                    .foregroundColor(colorScheme == .dark ? .mint : .green)
                                 Text("Duration & Goals")
                                     .font(.system(size: 18, weight: .semibold))
                                     .foregroundColor(.primary)
@@ -133,7 +178,7 @@ struct AddHabitView: View {
                             }
                             
                             VStack(spacing: 16) {
-                                // Date Pickers with modern styling
+                                // Date Pickers with adaptive styling
                                 HStack(spacing: 16) {
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Start Date")
@@ -146,8 +191,12 @@ struct AddHabitView: View {
                                             .padding(.vertical, 10)
                                             .background(
                                                 RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color.gray.opacity(0.1))
+                                                    .fill(colorScheme == .dark ?
+                                                          Color(red: 0.15, green: 0.15, blue: 0.2) :
+                                                          Color.gray.opacity(0.1)
+                                                    )
                                             )
+                                            .colorScheme(colorScheme == .dark ? .dark : .light)
                                     }
                                     
                                     VStack(alignment: .leading, spacing: 8) {
@@ -161,8 +210,15 @@ struct AddHabitView: View {
                                             .padding(.vertical, 10)
                                             .background(
                                                 RoundedRectangle(cornerRadius: 12)
-                                                    .fill(endDate <= startDate ? Color.red.opacity(0.1) : Color.gray.opacity(0.1))
+                                                    .fill(
+                                                        endDate <= startDate ?
+                                                            Color.red.opacity(colorScheme == .dark ? 0.2 : 0.1) :
+                                                            (colorScheme == .dark ?
+                                                             Color(red: 0.15, green: 0.15, blue: 0.2) :
+                                                             Color.gray.opacity(0.1))
+                                                    )
                                             )
+                                            .colorScheme(colorScheme == .dark ? .dark : .light)
                                     }
                                 }
                                 
@@ -171,8 +227,30 @@ struct AddHabitView: View {
                         .padding(20)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 2)
+                                .fill(
+                                    colorScheme == .dark ?
+                                        LinearGradient(
+                                            colors: [
+                                                Color(red: 0.12, green: 0.12, blue: 0.18),
+                                                Color(red: 0.15, green: 0.15, blue: 0.2)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ) :
+                                        LinearGradient(
+                                            colors: [Color.white, Color.white],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                )
+                                .shadow(
+                                    color: colorScheme == .dark ?
+                                        Color.black.opacity(0.3) :
+                                        Color.black.opacity(0.05),
+                                    radius: colorScheme == .dark ? 15 : 10,
+                                    x: 0,
+                                    y: 2
+                                )
                         )
                         Color.clear.frame(height: 100)
                     }
@@ -189,6 +267,7 @@ struct AddHabitView: View {
                         dismiss()
                     }
                     .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(colorScheme == .dark ? .white : .primary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -196,11 +275,19 @@ struct AddHabitView: View {
                         saveHabit()
                     }
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(isFormValid ? selectedColor : .gray)
+                    .foregroundColor(isFormValid ?
+                                   (colorScheme == .dark ? .cyan : selectedColor) :
+                                   .gray)
                     .scaleEffect(saveButtonScale)
                     .disabled(!isFormValid)
                 }
             }
+            .toolbarBackground(
+                colorScheme == .dark ?
+                    Color(red: 0.08, green: 0.08, blue: 0.12) :
+                    Color.white,
+                for: .navigationBar
+            )
         }
     }
     
