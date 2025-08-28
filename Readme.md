@@ -23,6 +23,11 @@ Now available on the [App Store](https://apps.apple.com/app/habify-track/id67514
 ---
 
 ## 📷 Screenshots
-*(Add screenshots here: home screen, add habit, reminder notification, etc.)*
+
+<p align="center">
+  <img src="media/image1.jpeg" alt="Home Screen" width="250"/>
+  <img src="media/image2.jpeg" alt="Add Habit" width="250"/>
+  <img src="media/image3.jpeg" alt="Habit Detail" width="250"/>
+</p>
 
 ---
