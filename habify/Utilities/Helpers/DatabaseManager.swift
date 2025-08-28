@@ -181,12 +181,13 @@ class DatabaseManager: ObservableObject {
         if sqlite3_prepare_v2(db, updateSQL, -1, &statement, nil) == SQLITE_OK {
             let dateFormatter = ISO8601DateFormatter()
             let now = dateFormatter.string(from: Date())
+            let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
             
-            sqlite3_bind_text(statement, 1, habit.title, -1, nil)
-            sqlite3_bind_text(statement, 2, habit.description, -1, nil)
-            sqlite3_bind_text(statement, 3, dateFormatter.string(from: habit.startDate), -1, nil)
-            sqlite3_bind_text(statement, 4, dateFormatter.string(from: habit.endDate), -1, nil)
-            sqlite3_bind_text(statement, 5, now, -1, nil)
+            sqlite3_bind_text(statement, 1, habit.title, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(statement, 2, habit.description, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(statement, 3, dateFormatter.string(from: habit.startDate), -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(statement, 4, dateFormatter.string(from: habit.endDate), -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(statement, 5, now, -1, SQLITE_TRANSIENT)
             sqlite3_bind_int(statement, 6, Int32(id))
             
             if sqlite3_step(statement) == SQLITE_DONE {

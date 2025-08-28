@@ -9,8 +9,10 @@ struct ContentView: View {
     
     @State private var selectedHabit: Habit? = nil
     @State private var isEditSheetPresented = false
-
     
+    @State private var selectedMonth: Int = Calendar.current.component(.month, from: Date())
+    @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
+
     func deleteHabit(_ habit: Habit) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             databaseManager.deleteHabit(habit)
@@ -39,7 +41,11 @@ struct ContentView: View {
                 habit.startDate <= weekInterval.end && habit.endDate >= weekInterval.start
             }
         case 2: // Monthly
-            guard let monthInterval = Calendar.current.dateInterval(of: .month, for: today) else {
+            var components = DateComponents()
+            components.year = selectedYear
+            components.month = selectedMonth
+            guard let monthStart = Calendar.current.date(from: components),
+                  let monthInterval = Calendar.current.dateInterval(of: .month, for: monthStart) else {
                 return []
             }
             return databaseManager.habits.filter { habit in
@@ -57,10 +63,13 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Welcome back 👋")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.secondary)
-                        
+                        HStack(spacing: 8) {
+                            Text("Welcome back")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.secondary)
+                            Image(systemName: "hand.wave.fill")
+                                .foregroundColor(.orange)
+                        }
                         Text("Habify")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundStyle(
@@ -146,6 +155,59 @@ struct ContentView: View {
                               Color.gray.opacity(0.1)
                         )
                 )
+                if selectedTab == 2 {
+                    HStack(spacing: 12) {
+                        Menu {
+                            ForEach(1...12, id: \.self) { month in
+                                Button(action: {
+                                    withAnimation(.spring()) {
+                                        selectedMonth = month
+                                    }
+                                }) {
+                                    Text(DateFormatter().monthSymbols[month-1])
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "calendar")
+                                Text(DateFormatter().monthSymbols[selectedMonth-1])
+                            }
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule().fill(Color.blue.opacity(0.1))
+                            )
+                        }
+                        
+                        Menu {
+                            let currentYear = Calendar.current.component(.year, from: Date())
+                            ForEach(currentYear...(currentYear+5), id: \.self) { year in
+                                Button(action: {
+                                    withAnimation(.spring()) {
+                                        selectedYear = year
+                                    }
+                                }) {
+                                    Text(String(year))
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "clock")
+                                Text(String(selectedYear))
+                            }
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.purple)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule().fill(Color.purple.opacity(0.1))
+                            )
+                        }
+                    }
+                    .padding(.top, 8)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -230,7 +292,7 @@ struct ContentView: View {
                                         }
                                         
                                         Button {
-                                            selectedHabit = habit   // ✅ fix disini
+                                            selectedHabit = habit
                                             isEditSheetPresented = true
                                         } label: {
                                             Label("Edit Habit", systemImage: "pencil")
