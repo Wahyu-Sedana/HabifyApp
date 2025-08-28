@@ -4,5 +4,7 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Habify needs notifications to remind you about your daily habits and celebrate your achievements</string>
 </dict>
 </plist>

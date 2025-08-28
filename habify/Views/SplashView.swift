@@ -18,7 +18,6 @@ struct SplashView: View {
                 .environmentObject(databaseManager)
         } else {
             ZStack {
-                // Adaptive gradient background
                 LinearGradient(
                     colors: colorScheme == .dark ? [
                         Color(red: 0.05, green: 0.05, blue: 0.1),
@@ -35,7 +34,6 @@ struct SplashView: View {
                 .ignoresSafeArea()
                 .opacity(backgroundOpacity)
                 
-                // Adaptive ambient glow circles
                 ZStack {
                     Circle()
                         .fill(
@@ -75,7 +73,6 @@ struct SplashView: View {
                         .blur(radius: colorScheme == .dark ? 20 : 15)
                         .offset(x: 120, y: 200)
                     
-                    // Additional glow for dark mode
                     if colorScheme == .dark {
                         Circle()
                             .fill(
@@ -98,7 +95,6 @@ struct SplashView: View {
                 
                 VStack(spacing: 24) {
                     ZStack {
-                        // Adaptive logo container
                         Circle()
                             .fill(
                                 colorScheme == .dark ?
@@ -174,7 +170,6 @@ struct SplashView: View {
                             .offset(y: textOffset)
                     }
                     
-                    // Adaptive loading indicator
                     HStack(spacing: 8) {
                         ForEach(0..<3) { index in
                             Circle()

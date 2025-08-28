@@ -1,9 +1,12 @@
 import SwiftUI
+import UserNotifications
 
 struct EditHabitView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var databaseManager: DatabaseManager
+    
+    private let notificationManager = NotificationManager.shared
     
     var habit: Habit
     
@@ -36,7 +39,6 @@ struct EditHabitView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Adaptive background gradient - same as AddHabitView
                 LinearGradient(
                     colors: colorScheme == .dark ? [
                         Color(red: 0.05, green: 0.05, blue: 0.1),
@@ -54,7 +56,6 @@ struct EditHabitView: View {
                 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 24) {
-                        // Header section with icon
                         VStack(spacing: 16) {
                             Text("Edit Your Habit")
                                 .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -74,7 +75,6 @@ struct EditHabitView: View {
                         }
                         .padding(.top, 20)
                         
-                        // Basic Information Card
                         VStack(spacing: 20) {
                             HStack {
                                 Image(systemName: "pencil.circle.fill")
@@ -85,7 +85,6 @@ struct EditHabitView: View {
                                 Spacer()
                             }
                             
-                            // Title Field
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Habit Title")
                                     .font(.system(size: 14, weight: .medium))
@@ -113,7 +112,6 @@ struct EditHabitView: View {
                                     )
                             }
                             
-                            // Description Field
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Description (Optional)")
                                     .font(.system(size: 14, weight: .medium))
@@ -166,7 +164,6 @@ struct EditHabitView: View {
                                 )
                         )
                         
-                        // Duration & Frequency Card
                         VStack(spacing: 20) {
                             HStack {
                                 Image(systemName: "calendar.badge.clock")
@@ -178,7 +175,6 @@ struct EditHabitView: View {
                             }
                             
                             VStack(spacing: 16) {
-                                // Date Pickers with adaptive styling
                                 HStack(spacing: 16) {
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Start Date")

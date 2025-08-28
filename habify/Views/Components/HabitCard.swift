@@ -72,7 +72,6 @@ struct HabitCard: View {
                         .lineLimit(2)
                 }
                 
-                // Adaptive date range
                 HStack(spacing: 8) {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar")
@@ -99,7 +98,6 @@ struct HabitCard: View {
                     }
                 }
                 
-                // Days remaining
                 Text("⏳ \(habit.daysRemaining) days left")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.orange)

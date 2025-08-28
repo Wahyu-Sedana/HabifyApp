@@ -1,9 +1,11 @@
 import SwiftUI
+import UserNotifications
 
 struct AddHabitView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var databaseManager: DatabaseManager
+    private let notificationManager = NotificationManager.shared
     
     @State private var title: String = ""
     @State private var description: String = ""
@@ -11,31 +13,33 @@ struct AddHabitView: View {
     @State private var endDate: Date = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     @State private var targetFrequency: Int = 7
     @State private var reminderEnabled: Bool = false
-    @State private var reminderTime: Date = Date()
+    @State private var reminderTime: Date = {
+        var components = DateComponents()
+        components.hour = 9
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? Date()
+    }()
     @State private var selectedColor: Color = .blue
     
-    // Animation states
     @State private var showValidationError: Bool = false
     @State private var saveButtonScale: CGFloat = 1.0
     @State private var formOffset: CGFloat = 0
+    @State private var notificationPermissionDenied: Bool = false
     
-    // Validation
     private var isFormValid: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         endDate > startDate
     }
     
-    // Color options for habit customization
-    private let colorOptions: [Color] = [
-        .blue, .green, .orange, .red, .purple, .pink, .indigo, .mint, .cyan, .teal
-    ]
+//    private let colorOptions: [Color] = [
+//        .blue, .green, .orange, .red, .purple, .pink, .indigo, .mint, .cyan, .teal
+//    ]
     
     var onSave: ((Habit) -> Void)?
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Adaptive background gradient
                 LinearGradient(
                     colors: colorScheme == .dark ? [
                         Color(red: 0.05, green: 0.05, blue: 0.1),
@@ -53,9 +57,7 @@ struct AddHabitView: View {
                 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 24) {
-                        // Header section with icon
                         VStack(spacing: 16) {
-                            
                             Text("Create New Habit")
                                 .font(.system(size: 24, weight: .bold, design: .rounded))
                                 .foregroundStyle(
@@ -74,7 +76,6 @@ struct AddHabitView: View {
                         }
                         .padding(.top, 20)
                         
-                        // Basic Information Card
                         VStack(spacing: 20) {
                             HStack {
                                 Image(systemName: "info.circle.fill")
@@ -85,7 +86,6 @@ struct AddHabitView: View {
                                 Spacer()
                             }
                             
-                            // Title Field
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Habit Title")
                                     .font(.system(size: 14, weight: .medium))
@@ -113,7 +113,6 @@ struct AddHabitView: View {
                                     )
                             }
                             
-                            // Description Field
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Description (Optional)")
                                     .font(.system(size: 14, weight: .medium))
@@ -137,36 +136,92 @@ struct AddHabitView: View {
                                     )
                             }
                         }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(
-                                    colorScheme == .dark ?
-                                        LinearGradient(
-                                            colors: [
-                                                Color(red: 0.12, green: 0.12, blue: 0.18),
-                                                Color(red: 0.15, green: 0.15, blue: 0.2)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ) :
-                                        LinearGradient(
-                                            colors: [Color.white, Color.white],
-                                            startPoint: .top,
-                                            endPoint: .bottom
+                        .cardStyle(colorScheme: colorScheme)
+                        VStack(spacing: 20) {
+                            HStack {
+                                Image(systemName: "bell.fill")
+                                    .foregroundColor(colorScheme == .dark ? .yellow : .orange)
+                                Text("Reminder Settings")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                Spacer()
+                            }
+                            
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Daily Reminder")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.primary)
+                                    
+                                    Text("Get notified to complete your habit")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: $reminderEnabled)
+                                    .tint(selectedColor)
+                            }
+                            
+                            if reminderEnabled {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Reminder Time")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                    
+                                    DatePicker("", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                                        .labelsHidden()
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(colorScheme == .dark ?
+                                                      Color(red: 0.15, green: 0.15, blue: 0.2) :
+                                                      Color.gray.opacity(0.1))
+                                        )
+                                        .colorScheme(colorScheme == .dark ? .dark : .light)
+                                }
+                                .transition(.opacity.combined(with: .scale))
+                            }
+                            
+                            if notificationPermissionDenied && reminderEnabled {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(.orange)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Notification Permission Required")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.primary)
+                                        
+                                        Text("Enable notifications in Settings to receive reminders")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Button("Settings") {
+                                        openSettings()
+                                    }
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.blue)
+                                }
+                                .padding(12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.orange.opacity(0.1))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
                                         )
                                 )
-                                .shadow(
-                                    color: colorScheme == .dark ?
-                                        Color.black.opacity(0.3) :
-                                        Color.black.opacity(0.05),
-                                    radius: colorScheme == .dark ? 15 : 10,
-                                    x: 0,
-                                    y: 2
-                                )
-                        )
+                                .transition(.opacity.combined(with: .scale))
+                            }
+                        }
+                        .cardStyle(colorScheme: colorScheme)
                         
-                        // Duration & Frequency Card
                         VStack(spacing: 20) {
                             HStack {
                                 Image(systemName: "calendar.badge.clock")
@@ -221,43 +276,17 @@ struct AddHabitView: View {
                                             .colorScheme(colorScheme == .dark ? .dark : .light)
                                     }
                                 }
-                                
                             }
                         }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(
-                                    colorScheme == .dark ?
-                                        LinearGradient(
-                                            colors: [
-                                                Color(red: 0.12, green: 0.12, blue: 0.18),
-                                                Color(red: 0.15, green: 0.15, blue: 0.2)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ) :
-                                        LinearGradient(
-                                            colors: [Color.white, Color.white],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                )
-                                .shadow(
-                                    color: colorScheme == .dark ?
-                                        Color.black.opacity(0.3) :
-                                        Color.black.opacity(0.05),
-                                    radius: colorScheme == .dark ? 15 : 10,
-                                    x: 0,
-                                    y: 2
-                                )
-                        )
+                        .cardStyle(colorScheme: colorScheme)
+                        
                         Color.clear.frame(height: 100)
                     }
                     .padding(.horizontal, 20)
                 }
                 .offset(y: formOffset)
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showValidationError)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: reminderEnabled)
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -289,6 +318,21 @@ struct AddHabitView: View {
                 for: .navigationBar
             )
         }
+        .onAppear {
+            checkNotificationPermission()
+        }
+    }
+    
+    private func checkNotificationPermission() {
+        notificationManager.checkPermissionStatus { status in
+            notificationPermissionDenied = (status != UNAuthorizationStatus.authorized)
+        }
+    }
+    
+    private func openSettings() {
+        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(settingsUrl)
+        }
     }
     
     private func saveHabit() {
@@ -306,7 +350,6 @@ struct AddHabitView: View {
             return
         }
         
-    
         withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
             saveButtonScale = 0.9
             formOffset = showValidationError ? -10 : 0
@@ -323,6 +366,17 @@ struct AddHabitView: View {
             
             databaseManager.addHabit(newHabit)
             
+            if reminderEnabled {
+                notificationManager.checkPermissionStatus { status in
+                    if status == UNAuthorizationStatus.authorized {
+                        notificationManager.scheduleHabitReminder(for: newHabit, at: reminderTime)
+                        print("Notification scheduled for habit: \(newHabit.title)")
+                    } else {
+                        print("Notification permission not granted")
+                    }
+                }
+            }
+            
             withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
                 saveButtonScale = 1.0
             }
@@ -331,5 +385,40 @@ struct AddHabitView: View {
                 dismiss()
             }
         }
+    }
+}
+
+// MARK: - View Extension for Card Styling
+extension View {
+    func cardStyle(colorScheme: ColorScheme) -> some View {
+        self
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        colorScheme == .dark ?
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.12, green: 0.12, blue: 0.18),
+                                    Color(red: 0.15, green: 0.15, blue: 0.2)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ) :
+                            LinearGradient(
+                                colors: [Color.white, Color.white],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                    )
+                    .shadow(
+                        color: colorScheme == .dark ?
+                            Color.black.opacity(0.3) :
+                            Color.black.opacity(0.05),
+                        radius: colorScheme == .dark ? 15 : 10,
+                        x: 0,
+                        y: 2
+                    )
+            )
     }
 }
