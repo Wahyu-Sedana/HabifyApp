@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		41F794EF2E604D0B009FCFD2 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 41F794EE2E604D05009FCFD2 /* Readme.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		41F7936C2E59A98B009FCFD2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		41F7935B2E59A98A009FCFD2 /* habify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = habify.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		41F7936B2E59A98B009FCFD2 /* habifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = habifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		41F793752E59A98B009FCFD2 /* habifyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = habifyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		41F794EE2E604D05009FCFD2 /* Readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Readme.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +93,7 @@
 		41F793522E59A98A009FCFD2 = {
 			isa = PBXGroup;
 			children = (
+				41F794EE2E604D05009FCFD2 /* Readme.md */,
 				41F7935D2E59A98A009FCFD2 /* habify */,
 				41F7936E2E59A98B009FCFD2 /* habifyTests */,
 				41F793782E59A98B009FCFD2 /* habifyUITests */,
@@ -225,6 +231,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41F794EF2E604D0B009FCFD2 /* Readme.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
