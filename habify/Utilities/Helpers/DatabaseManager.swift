@@ -8,12 +8,11 @@ class DatabaseManager: ObservableObject {
     
     @Published var habits: [Habit] = []
     
+    private let currentDatabaseVersion = 2
+    
     private init() {
-//        let fileURL = try! FileManager.default
-//                .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-//                .appendingPathComponent("habify.sqlite")
-//            try? FileManager.default.removeItem(at: fileURL)
         openDatabase()
+        migrateDatabase()
         createTables()
         loadHabits()
     }
@@ -43,6 +42,96 @@ class DatabaseManager: ObservableObject {
         db = nil
     }
     
+    // MARK: - Database Migration
+    private func migrateDatabase() {
+        let currentVersion = getDatabaseVersion()
+        
+        if currentVersion < currentDatabaseVersion {
+            print("Migrating database from version \(currentVersion) to \(currentDatabaseVersion)")
+            if currentVersion < 2 {
+                migrateToVersion2()
+            }
+            setDatabaseVersion(currentDatabaseVersion)
+            print("Database migration completed")
+        }
+    }
+    
+    private func getDatabaseVersion() -> Int {
+        var version = 0
+        let versionSQL = "PRAGMA user_version;"
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, versionSQL, -1, &statement, nil) == SQLITE_OK {
+            if sqlite3_step(statement) == SQLITE_ROW {
+                version = Int(sqlite3_column_int(statement, 0))
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        
+        if version == 0 {
+            let checkTableSQL = "SELECT name FROM sqlite_master WHERE type='table' AND name='habits';"
+            var checkStatement: OpaquePointer?
+            
+            if sqlite3_prepare_v2(db, checkTableSQL, -1, &checkStatement, nil) == SQLITE_OK {
+                if sqlite3_step(checkStatement) == SQLITE_ROW {
+                    version = 1
+                }
+            }
+            sqlite3_finalize(checkStatement)
+        }
+        
+        return version
+    }
+    
+    private func setDatabaseVersion(_ version: Int) {
+        let versionSQL = "PRAGMA user_version = \(version);"
+        sqlite3_exec(db, versionSQL, nil, nil, nil)
+    }
+    
+    private func migrateToVersion2() {
+        print("Migrating to version 2: Adding reminder columns")
+        
+        if !columnExists(table: "habits", column: "reminder_enabled") {
+            let addReminderEnabledSQL = "ALTER TABLE habits ADD COLUMN reminder_enabled INTEGER DEFAULT 0;"
+            if sqlite3_exec(db, addReminderEnabledSQL, nil, nil, nil) != SQLITE_OK {
+                print("Error adding reminder_enabled column: \(String(cString: sqlite3_errmsg(db)))")
+            } else {
+                print("Successfully added reminder_enabled column")
+            }
+        }
+        
+        if !columnExists(table: "habits", column: "reminder_time") {
+            let addReminderTimeSQL = "ALTER TABLE habits ADD COLUMN reminder_time TEXT;"
+            if sqlite3_exec(db, addReminderTimeSQL, nil, nil, nil) != SQLITE_OK {
+                print("Error adding reminder_time column: \(String(cString: sqlite3_errmsg(db)))")
+            } else {
+                print("Successfully added reminder_time column")
+            }
+        }
+    }
+    
+    private func columnExists(table: String, column: String) -> Bool {
+        let pragmaSQL = "PRAGMA table_info(\(table));"
+        var statement: OpaquePointer?
+        var exists = false
+        
+        if sqlite3_prepare_v2(db, pragmaSQL, -1, &statement, nil) == SQLITE_OK {
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if let columnName = sqlite3_column_text(statement, 1) {
+                    let name = String(cString: columnName)
+                    if name == column {
+                        exists = true
+                        break
+                    }
+                }
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return exists
+    }
+    
     // MARK: - Table Creation
     private func createTables() {
         createHabitsTable()
@@ -58,7 +147,9 @@ class DatabaseManager: ObservableObject {
                 start_date TEXT NOT NULL,
                 end_date TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                reminder_enabled INTEGER DEFAULT 0,
+                reminder_time TEXT
             );
         """
         
@@ -89,8 +180,8 @@ class DatabaseManager: ObservableObject {
     // MARK: - Habit CRUD Operations
     func addHabit(_ habit: Habit) {
         let insertSQL = """
-            INSERT INTO habits (title, description, start_date, end_date, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?);
+            INSERT INTO habits (title, description, start_date, end_date, created_at, updated_at, reminder_enabled, reminder_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
         
         var statement: OpaquePointer?
@@ -99,7 +190,6 @@ class DatabaseManager: ObservableObject {
             let dateFormatter = ISO8601DateFormatter()
             let now = dateFormatter.string(from: Date())
             let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-
             
             sqlite3_bind_text(statement, 1, habit.title, -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(statement, 2, habit.description, -1, SQLITE_TRANSIENT)
@@ -107,10 +197,13 @@ class DatabaseManager: ObservableObject {
             sqlite3_bind_text(statement, 4, dateFormatter.string(from: habit.endDate), -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(statement, 5, now, -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(statement, 6, now, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_int(statement, 7, habit.reminderEnabled ? 1 : 0)
+            
+            let reminderTimeString = dateFormatter.string(from: habit.reminderTime)
+            sqlite3_bind_text(statement, 8, reminderTimeString, -1, SQLITE_TRANSIENT)
             
             if sqlite3_step(statement) == SQLITE_DONE {
                 print("Successfully inserted habit")
-                
                 loadHabits()
             } else {
                 print("Could not insert habit: \(String(cString: sqlite3_errmsg(db)))")
@@ -123,7 +216,12 @@ class DatabaseManager: ObservableObject {
     }
     
     func loadHabits() {
-        let querySQL = "SELECT id, title, description, start_date, end_date, created_at, updated_at FROM habits ORDER BY created_at DESC;"
+        let querySQL = """
+            SELECT id, title, description, start_date, end_date, created_at, updated_at, 
+                   COALESCE(reminder_enabled, 0) as reminder_enabled,
+                   COALESCE(reminder_time, '') as reminder_time
+            FROM habits ORDER BY created_at DESC;
+        """
         var statement: OpaquePointer?
         
         if sqlite3_prepare_v2(db, querySQL, -1, &statement, nil) == SQLITE_OK {
@@ -141,12 +239,24 @@ class DatabaseManager: ObservableObject {
                 let startDate = dateFormatter.date(from: startDateString) ?? Date()
                 let endDate = dateFormatter.date(from: endDateString) ?? Date()
                 
+                let reminderEnabled = sqlite3_column_int(statement, 7) == 1
+                
+                var reminderTime = Date()
+                if let reminderTimeText = sqlite3_column_text(statement, 8) {
+                    let reminderTimeString = String(cString: reminderTimeText)
+                    if !reminderTimeString.isEmpty {
+                        reminderTime = dateFormatter.date(from: reminderTimeString) ?? Date()
+                    }
+                }
+                
                 let habit = Habit(
                     id: id,
                     title: title,
                     description: description,
                     startDate: startDate,
-                    endDate: endDate
+                    endDate: endDate,
+                    reminderEnabled: reminderEnabled,
+                    reminderTime: reminderTime
                 )
                 
                 loadedHabits.append(habit)
@@ -155,9 +265,9 @@ class DatabaseManager: ObservableObject {
             DispatchQueue.main.async {
                 self.habits = loadedHabits
                 print("Loaded \(loadedHabits.count) habits from database")
-
+                
                 for habit in loadedHabits {
-                    print("   - \(habit.title) (ID: \(habit.id ?? 0))")
+                    print("   - \(habit.title) (ID: \(habit.id ?? 0), Reminder: \(habit.reminderEnabled))")
                 }
             }
         } else {
@@ -172,7 +282,8 @@ class DatabaseManager: ObservableObject {
         
         let updateSQL = """
             UPDATE habits 
-            SET title = ?, description = ?, start_date = ?, end_date = ?, updated_at = ?
+            SET title = ?, description = ?, start_date = ?, end_date = ?, updated_at = ?, 
+                reminder_enabled = ?, reminder_time = ?
             WHERE id = ?;
         """
         
@@ -181,6 +292,7 @@ class DatabaseManager: ObservableObject {
         if sqlite3_prepare_v2(db, updateSQL, -1, &statement, nil) == SQLITE_OK {
             let dateFormatter = ISO8601DateFormatter()
             let now = dateFormatter.string(from: Date())
+            let reminderTimeString = dateFormatter.string(from: habit.reminderTime)
             let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
             
             sqlite3_bind_text(statement, 1, habit.title, -1, SQLITE_TRANSIENT)
@@ -188,7 +300,9 @@ class DatabaseManager: ObservableObject {
             sqlite3_bind_text(statement, 3, dateFormatter.string(from: habit.startDate), -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(statement, 4, dateFormatter.string(from: habit.endDate), -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(statement, 5, now, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_int(statement, 6, Int32(id))
+            sqlite3_bind_int(statement, 6, habit.reminderEnabled ? 1 : 0)
+            sqlite3_bind_text(statement, 7, reminderTimeString, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_int(statement, 8, Int32(id))
             
             if sqlite3_step(statement) == SQLITE_DONE {
                 print("Successfully updated habit")

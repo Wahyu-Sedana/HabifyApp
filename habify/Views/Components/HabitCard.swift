@@ -6,7 +6,6 @@ struct HabitCard: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Adaptive progress indicator circle
             ZStack {
                 Circle()
                     .stroke(
@@ -26,7 +25,6 @@ struct HabitCard: View {
                     .foregroundColor(colorScheme == .dark ? .cyan : .blue)
             }
             
-            // Content
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(habit.title)

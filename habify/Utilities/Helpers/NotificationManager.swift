@@ -65,7 +65,7 @@ class NotificationManager: ObservableObject {
     
     func scheduleCompletionNotification(for habit: Habit, streak: Int) {
         let content = UNMutableNotificationContent()
-        let (title, body, emoji) = getStreakMessage(streak: streak, habitTitle: habit.title)
+        let (title, body, _) = getStreakMessage(streak: streak, habitTitle: habit.title)
         
         content.title = title
         content.body = body

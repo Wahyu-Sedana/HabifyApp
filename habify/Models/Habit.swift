@@ -8,19 +8,35 @@ struct Habit: Identifiable, Codable, Equatable {
     var description: String
     var startDate: Date
     var endDate: Date
+    var reminderEnabled: Bool = false
+    var reminderTime: Date = {
+            var components = DateComponents()
+            components.hour = 9
+            components.minute = 0
+            return Calendar.current.date(from: components) ?? Date()
+        }()
     
     init(
         id: Int?,
         title: String,
         description: String,
         startDate: Date,
-        endDate: Date
+        endDate: Date,
+        reminderEnabled: Bool = false,
+        reminderTime: Date = {
+                var components = DateComponents()
+                components.hour = 9
+                components.minute = 0
+                return Calendar.current.date(from: components) ?? Date()
+            }()
     ) {
         self.id = id
         self.title = title
         self.description = description
         self.startDate = startDate
         self.endDate = endDate
+        self.reminderEnabled = reminderEnabled
+        self.reminderTime = reminderTime
     }
     
     // Computed

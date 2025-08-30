@@ -361,7 +361,9 @@ struct AddHabitView: View {
                 title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                 description: description.trimmingCharacters(in: .whitespacesAndNewlines),
                 startDate: startDate,
-                endDate: endDate
+                endDate: endDate,
+                reminderEnabled: reminderEnabled,
+                reminderTime: reminderTime
             )
             
             databaseManager.addHabit(newHabit)
