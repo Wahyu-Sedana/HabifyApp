@@ -7,7 +7,10 @@ struct ContentView: View {
     @State private var fabScale: CGFloat = 1.0
     @Environment(\.colorScheme) private var colorScheme
     
-    @State private var selectedHabit: Habit? = nil
+    // Separate states for detail popup and edit sheet
+    @State private var selectedHabitForDetail: Habit? = nil
+    @State private var selectedHabitForEdit: Habit? = nil
+    @State private var showDetailPopup: Bool = false
     @State private var isEditSheetPresented = false
     
     @State private var selectedMonth: Int = Calendar.current.component(.month, from: Date())
@@ -280,6 +283,12 @@ struct ContentView: View {
                         } else {
                             ForEach(Array(list.enumerated()), id: \.element.id) { index, habit in
                                 HabitCard(habit: habit)
+                                    .onTapGesture {
+                                        selectedHabitForDetail = habit
+                                        withAnimation(.spring()) {
+                                            showDetailPopup = true
+                                        }
+                                    }
                                     .transition(.asymmetric(
                                         insertion: .scale.combined(with: .opacity),
                                         removal: .scale.combined(with: .opacity)
@@ -293,7 +302,7 @@ struct ContentView: View {
                                         }
                                         
                                         Button {
-                                            selectedHabit = habit
+                                            selectedHabitForEdit = habit
                                             isEditSheetPresented = true
                                         } label: {
                                             Label("Edit Habit", systemImage: "pencil")
@@ -309,6 +318,7 @@ struct ContentView: View {
                 }
             }
             
+            // FAB button
             Button(action: {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     fabScale = 0.9
@@ -355,8 +365,36 @@ struct ContentView: View {
             .scaleEffect(fabScale)
             .padding(.trailing, 20)
             .padding(.bottom, 34)
-            .sheet(isPresented: $showAddHabit) {
-                AddHabitView()
+
+            if showDetailPopup, let habit = selectedHabitForDetail {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            showDetailPopup = false
+                        }
+                    }
+                
+                DetailHabitPopup(
+                    habit: habit,
+                    onClose: {
+                        withAnimation(.spring()) {
+                            showDetailPopup = false
+                        }
+                    },
+                    onEdit: {                        withAnimation(.spring()) {
+                            showDetailPopup = false
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            selectedHabitForEdit = habit
+                            isEditSheetPresented = true
+                        }
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .padding(.horizontal, 20)
+                .transition(.scale.combined(with: .opacity))
+                .zIndex(2)
             }
         }
         .onAppear {
@@ -365,22 +403,23 @@ struct ContentView: View {
         .refreshable {
             databaseManager.loadHabits()
         }
-        .sheet(item: Binding(
-            get: {
-                selectedHabit ?? (showAddHabit ? Habit(id: 0, title: "", description: "", startDate: Date(), endDate: Date()) : nil)
-            },
-            set: { newValue in
-                if newValue == nil {
-                    selectedHabit = nil
-                    showAddHabit = false
-                }
-            }
-        )) { habit in
-            if let selectedHabit = selectedHabit {
-                EditHabitView(habit: selectedHabit)
+        .sheet(isPresented: $showAddHabit) {
+            AddHabitView()
+        }
+        .sheet(isPresented: $isEditSheetPresented) {
+            if let habitToEdit = selectedHabitForEdit {
+                EditHabitView(habit: habitToEdit)
                     .environmentObject(databaseManager)
-            } else {
-                AddHabitView()
+            }
+        }
+        .onChange(of: isEditSheetPresented) { isPresented in
+            if !isPresented {
+                selectedHabitForEdit = nil
+            }
+        }
+        .onChange(of: showDetailPopup) { isShowing in
+            if !isShowing {
+                selectedHabitForDetail = nil
             }
         }
     }
