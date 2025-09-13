@@ -1,6 +1,27 @@
 import Foundation
 import SwiftUI
 
+// MARK: - HabitTask Model
+struct HabitTask: Identifiable, Codable, Equatable {
+    var id: Int?
+    var title: String
+    var isCompleted: Bool = false
+    var createdAt: Date = Date()
+    
+    init(title: String, isCompleted: Bool = false) {
+        self.id = nil
+        self.title = title
+        self.isCompleted = isCompleted
+        self.createdAt = Date()
+    }
+    init(id: Int, title: String, isCompleted: Bool, createdAt: Date = Date()) {
+        self.id = id
+        self.title = title
+        self.isCompleted = isCompleted
+        self.createdAt = createdAt
+    }
+}
+
 // MARK: - Habit Model
 struct Habit: Identifiable, Codable, Equatable {
     var id: Int?
@@ -10,11 +31,13 @@ struct Habit: Identifiable, Codable, Equatable {
     var endDate: Date
     var reminderEnabled: Bool = false
     var reminderTime: Date = {
-            var components = DateComponents()
-            components.hour = 9
-            components.minute = 0
-            return Calendar.current.date(from: components) ?? Date()
-        }()
+        var components = DateComponents()
+        components.hour = 9
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? Date()
+    }()
+    
+    var tasks: [HabitTask] = []
     
     init(
         id: Int?,
@@ -24,11 +47,12 @@ struct Habit: Identifiable, Codable, Equatable {
         endDate: Date,
         reminderEnabled: Bool = false,
         reminderTime: Date = {
-                var components = DateComponents()
-                components.hour = 9
-                components.minute = 0
-                return Calendar.current.date(from: components) ?? Date()
-            }()
+            var components = DateComponents()
+            components.hour = 9
+            components.minute = 0
+            return Calendar.current.date(from: components) ?? Date()
+        }(),
+        tasks: [HabitTask] = []
     ) {
         self.id = id
         self.title = title
@@ -37,9 +61,11 @@ struct Habit: Identifiable, Codable, Equatable {
         self.endDate = endDate
         self.reminderEnabled = reminderEnabled
         self.reminderTime = reminderTime
+        self.tasks = tasks
     }
     
-    // Computed
+    // MARK: - Computed
+    
     var isActive: Bool {
         let today = Date()
         return today >= startDate && today <= endDate
@@ -51,16 +77,10 @@ struct Habit: Identifiable, Codable, Equatable {
         return max(0, Calendar.current.dateComponents([.day], from: today, to: end).day ?? 0)
     }
     
+    /// Progress berdasarkan checklist task, bukan hari
     var progressPercentage: Double {
-        let today = Calendar.current.startOfDay(for: Date())
-        let start = Calendar.current.startOfDay(for: startDate)
-        let end = Calendar.current.startOfDay(for: endDate)
-        
-        guard today >= start else { return 0.0 }
-        guard today <= end else { return 1.0 }
-        
-        let totalDays = Calendar.current.dateComponents([.day], from: start, to: end).day ?? 0
-        let elapsedDays = Calendar.current.dateComponents([.day], from: start, to: today).day ?? 0
-        return totalDays > 0 ? Double(elapsedDays) / Double(totalDays) : 0.0
+        guard !tasks.isEmpty else { return 0.0 }
+        let completedCount = tasks.filter { $0.isCompleted }.count
+        return Double(completedCount) / Double(tasks.count)
     }
 }

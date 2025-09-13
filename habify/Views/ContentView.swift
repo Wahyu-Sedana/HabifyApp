@@ -7,10 +7,10 @@ struct ContentView: View {
     @State private var fabScale: CGFloat = 1.0
     @Environment(\.colorScheme) private var colorScheme
     
-    // Separate states for detail popup and edit sheet
     @State private var selectedHabitForDetail: Habit? = nil
+    @State private var isDetailViewPresented = false
+    
     @State private var selectedHabitForEdit: Habit? = nil
-    @State private var showDetailPopup: Bool = false
     @State private var isEditSheetPresented = false
     
     @State private var selectedMonth: Int = Calendar.current.component(.month, from: Date())
@@ -158,6 +158,7 @@ struct ContentView: View {
                               Color.gray.opacity(0.1)
                         )
                 )
+                
                 if selectedTab == 2 {
                     HStack(spacing: 12) {
                         Menu {
@@ -255,148 +256,130 @@ struct ContentView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            LinearGradient(
-                colors: colorScheme == .dark ? [
-                    Color(red: 0.05, green: 0.05, blue: 0.1),
-                    Color(red: 0.08, green: 0.08, blue: 0.12),
-                    Color(red: 0.06, green: 0.06, blue: 0.11)
-                ] : [
-                    Color.white,
-                    Color(red: 0.98, green: 0.98, blue: 1.0),
-                    Color(red: 0.96, green: 0.97, blue: 0.99)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                headerView
+        NavigationView {
+            ZStack(alignment: .bottomTrailing) {
+                LinearGradient(
+                    colors: colorScheme == .dark ? [
+                        Color(red: 0.05, green: 0.05, blue: 0.1),
+                        Color(red: 0.08, green: 0.08, blue: 0.12),
+                        Color(red: 0.06, green: 0.06, blue: 0.11)
+                    ] : [
+                        Color.white,
+                        Color(red: 0.98, green: 0.98, blue: 1.0),
+                        Color(red: 0.96, green: 0.97, blue: 0.99)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
                 
-                ScrollView(.vertical, showsIndicators: false) {
-                    LazyVStack(spacing: 16) {
-                        let list = filteredHabits()
-                        
-                        if list.isEmpty {
-                            emptyStateView
-                        } else {
-                            ForEach(Array(list.enumerated()), id: \.element.id) { index, habit in
-                                HabitCard(habit: habit)
-                                    .onTapGesture {
-                                        selectedHabitForDetail = habit
-                                        withAnimation(.spring()) {
-                                            showDetailPopup = true
-                                        }
-                                    }
-                                    .transition(.asymmetric(
-                                        insertion: .scale.combined(with: .opacity),
-                                        removal: .scale.combined(with: .opacity)
-                                    ))
-                                    .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(Double(index) * 0.05), value: list.count)
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            deleteHabit(habit)
-                                        } label: {
-                                            Label("Delete Habit", systemImage: "trash")
-                                        }
-                                        
-                                        Button {
-                                            selectedHabitForEdit = habit
-                                            isEditSheetPresented = true
-                                        } label: {
-                                            Label("Edit Habit", systemImage: "pencil")
-                                        }
-                                    }
-                            }
-                            
-                            Color.clear.frame(height: 100)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                }
-            }
-            
-            // FAB button
-            Button(action: {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    fabScale = 0.9
-                    showAddHabit = true
-                }
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        fabScale = 1.0
-                    }
-                }
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 20, weight: .bold))
+                VStack(spacing: 0) {
+                    headerView
                     
-                    if !filteredHabits().isEmpty {
-                        Text("Add Habit")
-                            .font(.system(size: 16, weight: .semibold))
+                    ScrollView(.vertical, showsIndicators: false) {
+                        LazyVStack(spacing: 16) {
+                            let list = filteredHabits()
+                            
+                            if list.isEmpty {
+                                emptyStateView
+                            } else {
+                                ForEach(Array(list.enumerated()), id: \.element.id) { index, habit in
+                                    HabitCard(habit: habit)
+                                        .onTapGesture {
+                                            selectedHabitForDetail = habit
+                                            isDetailViewPresented = true
+                                        }
+                                        .transition(.asymmetric(
+                                            insertion: .scale.combined(with: .opacity),
+                                            removal: .scale.combined(with: .opacity)
+                                        ))
+                                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(Double(index) * 0.05), value: list.count)
+                                        .contextMenu {
+                                            Button(role: .destructive) {
+                                                deleteHabit(habit)
+                                            } label: {
+                                                Label("Delete Habit", systemImage: "trash")
+                                            }
+                                            
+                                            Button {
+                                                selectedHabitForEdit = habit
+                                                isEditSheetPresented = true
+                                            } label: {
+                                                Label("Edit Habit", systemImage: "pencil")
+                                            }
+                                        }
+                                }
+                                
+                                Color.clear.frame(height: 100)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
                     }
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, filteredHabits().isEmpty ? 18 : 20)
-                .padding(.vertical, 18)
-                .background(
-                    RoundedRectangle(cornerRadius: filteredHabits().isEmpty ? 30 : 25)
-                        .fill(
-                            LinearGradient(
-                                colors: colorScheme == .dark ?
-                                    [Color.cyan.opacity(0.8), Color.blue.opacity(0.7)] :
-                                    [Color.blue, Color.blue.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(
-                            color: (colorScheme == .dark ? Color.cyan : Color.blue).opacity(0.3),
-                            radius: 12,
-                            x: 0,
-                            y: 6
-                        )
-                )
-            }
-            .scaleEffect(fabScale)
-            .padding(.trailing, 20)
-            .padding(.bottom, 34)
-
-            if showDetailPopup, let habit = selectedHabitForDetail {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring()) {
-                            showDetailPopup = false
-                        }
-                    }
                 
-                DetailHabitPopup(
-                    habit: habit,
-                    onClose: {
-                        withAnimation(.spring()) {
-                            showDetailPopup = false
-                        }
-                    },
-                    onEdit: {                        withAnimation(.spring()) {
-                            showDetailPopup = false
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            selectedHabitForEdit = habit
-                            isEditSheetPresented = true
+                // FAB button
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        fabScale = 0.9
+                        showAddHabit = true
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            fabScale = 1.0
                         }
                     }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                        
+                        if !filteredHabits().isEmpty {
+                            Text("Add Habit")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, filteredHabits().isEmpty ? 18 : 20)
+                    .padding(.vertical, 18)
+                    .background(
+                        RoundedRectangle(cornerRadius: filteredHabits().isEmpty ? 30 : 25)
+                            .fill(
+                                LinearGradient(
+                                    colors: colorScheme == .dark ?
+                                        [Color.cyan.opacity(0.8), Color.blue.opacity(0.7)] :
+                                        [Color.blue, Color.blue.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .shadow(
+                                color: (colorScheme == .dark ? Color.cyan : Color.blue).opacity(0.3),
+                                radius: 12,
+                                x: 0,
+                                y: 6
+                            )
+                    )
+                }
+                .scaleEffect(fabScale)
+                .padding(.trailing, 20)
+                .padding(.bottom, 34)
+                
+                // Navigation Link untuk Detail View (hidden)
+                NavigationLink(
+                    destination: selectedHabitForDetail.map { habit in
+                        HabitDetailView(habit: habit)
+                            .environmentObject(databaseManager)
+                    },
+                    isActive: $isDetailViewPresented,
+                    label: { EmptyView() }
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .padding(.horizontal, 20)
-                .transition(.scale.combined(with: .opacity))
-                .zIndex(2)
+                .hidden()
             }
+            .navigationBarHidden(true)
         }
+        .navigationViewStyle(StackNavigationViewStyle()) // Force stack navigation on all devices
         .onAppear {
             databaseManager.loadHabits()
         }
@@ -417,8 +400,8 @@ struct ContentView: View {
                 selectedHabitForEdit = nil
             }
         }
-        .onChange(of: showDetailPopup) { isShowing in
-            if !isShowing {
+        .onChange(of: isDetailViewPresented) { isPresented in
+            if !isPresented {
                 selectedHabitForDetail = nil
             }
         }

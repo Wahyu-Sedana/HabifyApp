@@ -136,90 +136,89 @@ struct AddHabitView: View {
                                     )
                             }
                         }
-                        .cardStyle(colorScheme: colorScheme)
-                        VStack(spacing: 20) {
-                            HStack {
-                                Image(systemName: "bell.fill")
-                                    .foregroundColor(colorScheme == .dark ? .yellow : .orange)
-                                Text("Reminder Settings")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.primary)
-                                Spacer()
-                            }
-                            
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Daily Reminder")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(.primary)
-                                    
-                                    Text("Get notified to complete your habit")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Toggle("", isOn: $reminderEnabled)
-                                    .tint(selectedColor)
-                            }
-                            
-                            if reminderEnabled {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Reminder Time")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.secondary)
-                                    
-                                    DatePicker("", selection: $reminderTime, displayedComponents: .hourAndMinute)
-                                        .labelsHidden()
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(colorScheme == .dark ?
-                                                      Color(red: 0.15, green: 0.15, blue: 0.2) :
-                                                      Color.gray.opacity(0.1))
-                                        )
-                                        .colorScheme(colorScheme == .dark ? .dark : .light)
-                                }
-                                .transition(.opacity.combined(with: .scale))
-                            }
-                            
-                            if notificationPermissionDenied && reminderEnabled {
-                                HStack {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundColor(.orange)
-                                    
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Notification Permission Required")
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.primary)
-                                        
-                                        Text("Enable notifications in Settings to receive reminders")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.secondary)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Button("Settings") {
-                                        openSettings()
-                                    }
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.blue)
-                                }
-                                .padding(12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.orange.opacity(0.1))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                                        )
-                                )
-                                .transition(.opacity.combined(with: .scale))
-                            }
-                        }
+//                        VStack(spacing: 20) {
+//                            HStack {
+//                                Image(systemName: "bell.fill")
+//                                    .foregroundColor(colorScheme == .dark ? .yellow : .orange)
+//                                Text("Reminder Settings")
+//                                    .font(.system(size: 18, weight: .semibold))
+//                                    .foregroundColor(.primary)
+//                                Spacer()
+//                            }
+//                            
+//                            HStack {
+//                                VStack(alignment: .leading, spacing: 4) {
+//                                    Text("Daily Reminder")
+//                                        .font(.system(size: 16, weight: .medium))
+//                                        .foregroundColor(.primary)
+//                                    
+//                                    Text("Get notified to complete your habit")
+//                                        .font(.system(size: 14))
+//                                        .foregroundColor(.secondary)
+//                                }
+//                                
+//                                Spacer()
+//                                
+//                                Toggle("", isOn: $reminderEnabled)
+//                                    .tint(selectedColor)
+//                            }
+//                            
+//                            if reminderEnabled {
+//                                VStack(alignment: .leading, spacing: 8) {
+//                                    Text("Reminder Time")
+//                                        .font(.system(size: 14, weight: .medium))
+//                                        .foregroundColor(.secondary)
+//                                    
+//                                    DatePicker("", selection: $reminderTime, displayedComponents: .hourAndMinute)
+//                                        .labelsHidden()
+//                                        .padding(.horizontal, 12)
+//                                        .padding(.vertical, 10)
+//                                        .background(
+//                                            RoundedRectangle(cornerRadius: 12)
+//                                                .fill(colorScheme == .dark ?
+//                                                      Color(red: 0.15, green: 0.15, blue: 0.2) :
+//                                                      Color.gray.opacity(0.1))
+//                                        )
+//                                        .colorScheme(colorScheme == .dark ? .dark : .light)
+//                                }
+//                                .transition(.opacity.combined(with: .scale))
+//                            }
+//                            
+//                            if notificationPermissionDenied && reminderEnabled {
+//                                HStack {
+//                                    Image(systemName: "exclamationmark.triangle.fill")
+//                                        .foregroundColor(.orange)
+//                                    
+//                                    VStack(alignment: .leading, spacing: 4) {
+//                                        Text("Notification Permission Required")
+//                                            .font(.system(size: 14, weight: .medium))
+//                                            .foregroundColor(.primary)
+//                                        
+//                                        Text("Enable notifications in Settings to receive reminders")
+//                                            .font(.system(size: 12))
+//                                            .foregroundColor(.secondary)
+//                                    }
+//                                    
+//                                    Spacer()
+//                                    
+//                                    Button("Settings") {
+//                                        openSettings()
+//                                    }
+//                                    .font(.system(size: 12, weight: .medium))
+//                                    .foregroundColor(.blue)
+//                                }
+//                                .padding(12)
+//                                .background(
+//                                    RoundedRectangle(cornerRadius: 12)
+//                                        .fill(Color.orange.opacity(0.1))
+//                                        .overlay(
+//                                            RoundedRectangle(cornerRadius: 12)
+//                                                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+//                                        )
+//                                )
+//                                .transition(.opacity.combined(with: .scale))
+//                            }
+//                        }
                         .cardStyle(colorScheme: colorScheme)
                         
                         VStack(spacing: 20) {
@@ -368,16 +367,16 @@ struct AddHabitView: View {
             
             databaseManager.addHabit(newHabit)
             
-            if reminderEnabled {
-                notificationManager.checkPermissionStatus { status in
-                    if status == UNAuthorizationStatus.authorized {
-                        notificationManager.scheduleHabitReminder(for: newHabit, at: reminderTime)
-                        print("Notification scheduled for habit: \(newHabit.title)")
-                    } else {
-                        print("Notification permission not granted")
-                    }
-                }
-            }
+//            if reminderEnabled {
+//                notificationManager.checkPermissionStatus { status in
+//                    if status == UNAuthorizationStatus.authorized {
+//                        notificationManager.scheduleHabitReminder(for: newHabit, at: reminderTime)
+//                        print("Notification scheduled for habit: \(newHabit.title)")
+//                    } else {
+//                        print("Notification permission not granted")
+//                    }
+//                }
+//            }
             
             withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
                 saveButtonScale = 1.0
